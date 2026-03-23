@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: meal_platform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meal_platform
+      POSTGRES_USER: meal_user
+      POSTGRES_PASSWORD: meal_password_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meal_user -d meal_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flask Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: meal_platform_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://meal_user:meal_password_2024@db:5432/meal_platform
+      SECRET_KEY: super-secret-key-change-in-production
+      JWT_SECRET_KEY: jwt-super-secret-change-in-production
+      FLASK_ENV: production
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads_data:/app/static/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: meal_platform_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # Prometheus - Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: meal_platform_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # Grafana - Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: meal_platform_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  uploads_data:
+  grafana_data:
