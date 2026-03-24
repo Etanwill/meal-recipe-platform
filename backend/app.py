@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify, request
+from prometheus_flask_exporter import PrometheusMetrics
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import (
@@ -234,6 +235,7 @@ def validate_password(password):
 
 # Create Flask app
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 app.config.from_object(Config)
 
 # Initialize extensions
