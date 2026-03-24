@@ -11,96 +11,61 @@ pipeline {
             steps {
                 echo '========== Stage 1: Checking out source code =========='
                 checkout scm
-                sh "git log -1 --pretty='%B'"
             }
         }
 
         stage('Install & Lint Backend') {
             steps {
                 echo '========== Stage 2: Installing Python dependencies =========='
-                sh '''
-                    docker run --rm \
-                        -v "$WORKSPACE/backend:/app" \
-                        -w /app \
-                        python:3.11-slim \
-                        sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install flake8 -q && flake8 /app --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=/app/venv || true && echo Backend lint complete"
-                '''
+                sh 'docker run --rm -v "$WORKSPACE/backend:/app" -w /app python:3.11-slim sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install flake8 -q && flake8 /app --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=/app/venv || true && echo BACKEND_LINT_DONE"'
             }
         }
 
         stage('Install & Lint Frontend') {
             steps {
                 echo '========== Stage 3: Installing Node dependencies =========='
-                sh '''
-                    docker run --rm \
-                        -v "$WORKSPACE/frontend:/app" \
-                        -w /app \
-                        node:18-alpine \
-                        sh -c "npm install --legacy-peer-deps --silent && echo Frontend install complete"
-                '''
+                sh 'docker run --rm -v "$WORKSPACE/frontend:/app" -w /app node:18-alpine sh -c "npm install --legacy-peer-deps --silent && echo FRONTEND_INSTALL_DONE"'
             }
         }
 
         stage('Test Backend') {
             steps {
                 echo '========== Stage 4: Running Backend Tests =========='
-                sh '''
-                    docker run --rm \
-                        -v "$WORKSPACE/backend:/app" \
-                        -w /app \
-                        python:3.11-slim \
-                        sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && (pytest /app/tests/ --cov=/app --cov-report=term-missing --tb=short -q --ignore=/app/venv 2>&1 || echo 'No tests found - skipping') && echo Backend tests complete"
-                '''
+                sh 'docker run --rm -v "$WORKSPACE/backend:/app" -w /app python:3.11-slim sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && pytest /app/tests/ --tb=short -q --ignore=/app/venv || echo NO_TESTS_FOUND"'
             }
         }
 
         stage('Test Frontend') {
             steps {
                 echo '========== Stage 5: Running Frontend Tests =========='
-                sh '''
-                    docker run --rm \
-                        -v "$WORKSPACE/frontend:/app" \
-                        -w /app \
-                        node:18-alpine \
-                        sh -c "npm install --legacy-peer-deps --silent && CI=true npm test -- --watchAll=false --passWithNoTests && echo Frontend tests complete"
-                '''
+                sh 'docker run --rm -v "$WORKSPACE/frontend:/app" -w /app node:18-alpine sh -c "npm install --legacy-peer-deps --silent && CI=true npm test -- --watchAll=false --passWithNoTests && echo FRONTEND_TESTS_DONE"'
             }
         }
 
         stage('Build Docker Images') {
             steps {
                 echo '========== Stage 6: Building Docker Images =========='
-                sh '''
-                    docker compose -f ${DOCKER_COMPOSE_FILE} build
-                    echo "Images built successfully:"
-                    docker images | grep meal-recipe || true
-                '''
+                sh 'docker compose -f ${DOCKER_COMPOSE_FILE} build'
+                sh 'docker images | grep meal-recipe || true'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo '========== Stage 7: Deploying Application =========='
-                sh '''
-                    docker compose -f ${DOCKER_COMPOSE_FILE} down || true
-                    docker compose -f ${DOCKER_COMPOSE_FILE} up -d
-                    echo "Waiting for services to start..."
-                    sleep 20
-                    docker compose -f ${DOCKER_COMPOSE_FILE} ps
-                '''
+                sh 'docker compose -f ${DOCKER_COMPOSE_FILE} down || true'
+                sh 'docker compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                sh 'sleep 20'
+                sh 'docker compose -f ${DOCKER_COMPOSE_FILE} ps'
             }
         }
 
         stage('Health Check') {
             steps {
                 echo '========== Stage 8: Running Health Checks =========='
-                sh '''
-                    echo "Checking backend..."
-                    curl -sf http://localhost:5000 && echo "Backend OK" || echo "Backend responded"
-                    echo "Checking frontend..."
-                    curl -sf http://localhost:80 && echo "Frontend OK" || echo "Frontend responded"
-                    echo "All health checks complete."
-                '''
+                sh 'curl -sf http://localhost:5000 && echo "Backend OK" || echo "Backend responded"'
+                sh 'curl -sf http://localhost:80 && echo "Frontend OK" || echo "Frontend responded"'
+                echo 'All health checks complete.'
             }
         }
     }
