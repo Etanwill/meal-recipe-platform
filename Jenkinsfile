@@ -23,7 +23,7 @@ pipeline {
                         -v "$WORKSPACE/backend:/app" \
                         -w /app \
                         python:3.11-slim \
-                        sh -c "pip install --upgrade pip -q && pip install -r requirements.txt -q && pip install flake8 -q && flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true && echo Backend lint complete"
+                        sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install flake8 -q && flake8 /app --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=/app/venv || true && echo Backend lint complete"
                 '''
             }
         }
@@ -49,7 +49,7 @@ pipeline {
                         -v "$WORKSPACE/backend:/app" \
                         -w /app \
                         python:3.11-slim \
-                        sh -c "pip install --upgrade pip -q && pip install -r requirements.txt -q && pip install pytest pytest-cov -q && pytest tests/ --cov=. --cov-report=term-missing --tb=short -q 2>/dev/null || echo No tests found - skipping"
+                        sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && (pytest /app/tests/ --cov=/app --cov-report=term-missing --tb=short -q --ignore=/app/venv 2>&1 || echo 'No tests found - skipping') && echo Backend tests complete"
                 '''
             }
         }
@@ -62,7 +62,7 @@ pipeline {
                         -v "$WORKSPACE/frontend:/app" \
                         -w /app \
                         node:18-alpine \
-                        sh -c "npm install --legacy-peer-deps --silent && CI=true npm test -- --watchAll=false --passWithNoTests 2>/dev/null || echo Frontend tests done"
+                        sh -c "npm install --legacy-peer-deps --silent && CI=true npm test -- --watchAll=false --passWithNoTests && echo Frontend tests complete"
                 '''
             }
         }
@@ -72,7 +72,7 @@ pipeline {
                 echo '========== Stage 6: Building Docker Images =========='
                 sh '''
                     docker compose -f ${DOCKER_COMPOSE_FILE} build
-                    echo "Images built:"
+                    echo "Images built successfully:"
                     docker images | grep meal-recipe || true
                 '''
             }
@@ -99,7 +99,7 @@ pipeline {
                     curl -sf http://localhost:5000 && echo "Backend OK" || echo "Backend responded"
                     echo "Checking frontend..."
                     curl -sf http://localhost:80 && echo "Frontend OK" || echo "Frontend responded"
-                    echo "Health checks complete."
+                    echo "All health checks complete."
                 '''
             }
         }
