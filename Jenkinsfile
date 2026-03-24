@@ -62,15 +62,16 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                echo '========== Stage 6: Deploying with Docker Compose =========='
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d'
-                sh 'sleep 10'
-                sh 'docker-compose ps'
-            }
-        }
-
+    steps {
+        echo '========== Stage 6: Deploying with Docker Compose =========='
+        sh 'docker-compose -f $WORKSPACE/docker-compose.yml down || true'
+        sh 'mkdir -p $WORKSPACE/monitoring'
+        sh 'cp $WORKSPACE/monitoring/prometheus.yml $WORKSPACE/monitoring/prometheus.yml 2>/dev/null || echo "prometheus config present"'
+        sh 'docker-compose -f $WORKSPACE/docker-compose.yml up -d --no-deps backend frontend db'
+        sh 'sleep 15'
+        sh 'docker-compose -f $WORKSPACE/docker-compose.yml ps'
+    }
+}
         stage('Health Check') {
             steps {
                 echo '========== Stage 7: Health Check =========='
