@@ -5,11 +5,11 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-COPY package.json ./
-
-RUN npm install ajv@^8.11.0 --legacy-peer-deps && npm run build
-
+# Copy ALL source files first
 COPY . .
+
+# Install dependencies including ajv fix
+RUN npm install --legacy-peer-deps && npm install ajv@^8.11.0 --legacy-peer-deps
 
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
@@ -22,10 +22,8 @@ RUN echo "=== Build output ===" && find /app/build -type f | head -20
 # ---- Stage 2: Serve with Nginx ----
 FROM nginx:alpine
 
-# Copy built React files
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Verify files are there
 RUN echo "=== Nginx html contents ===" && ls -la /usr/share/nginx/html/
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
