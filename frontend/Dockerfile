@@ -1,32 +1,35 @@
 # ---- Stage 1: Build the React app ----
 FROM node:18-alpine AS builder
 
-# Set working directory
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Copy package files first (caching optimization)
-COPY package.json package-lock.json ./
+COPY package.json ./
 
-# Install dependencies
-RUN npm ci --silent
+RUN npm install --legacy-peer-deps
 
-# Copy all frontend source code
 COPY . .
 
-# Build the production React app
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+
 RUN npm run build
+
+# Debug: show what was built
+RUN echo "=== Build output ===" && find /app/build -type f | head -20
 
 # ---- Stage 2: Serve with Nginx ----
 FROM nginx:alpine
 
-# Copy built React files to Nginx's serve directory
+# Copy built React files
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy our custom Nginx config
+# Verify files are there
+RUN echo "=== Nginx html contents ===" && ls -la /usr/share/nginx/html/
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
 EXPOSE 80
 
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
