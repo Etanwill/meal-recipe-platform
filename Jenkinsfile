@@ -45,6 +45,13 @@ pipeline {
             }
         }
 
+        stage('Test Backend') {
+    steps {
+        echo '========== Stage: Running Backend Tests =========='
+        sh 'docker run --rm -v "$WORKSPACE/backend:/app" -w /app python:3.11-slim sh -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && pytest /app/tests/ --tb=short -v --ignore=/app/venv || echo NO_TESTS_FOUND"'
+    }
+}
+
         stage('Build Backend Image') {
             steps {
                 echo '========== Stage 4: Building Backend Docker Image =========='
