@@ -48,13 +48,7 @@ pipeline {
         stage('Test Backend') {
     steps {
         echo '========== Stage: Running Backend Tests =========='
-        writeFile file: 'run_tests.sh', text: '''pip install --upgrade pip -q
-pip install -r /app/requirements.txt -q
-pip install pytest pytest-cov -q
-pytest /app/tests/ --tb=short -v --ignore=/app/venv
-'''
-        sh 'chmod +x "$WORKSPACE/run_tests.sh"'
-        sh 'docker run --rm -v "$WORKSPACE/backend:/app" -v "$WORKSPACE/run_tests.sh:/run_tests.sh:ro" python:3.11-slim bash /run_tests.sh'
+        sh 'docker exec meal_platform_backend bash -c "cd /app && pip install pytest pytest-cov -q && pytest tests/ --tb=short -v --ignore=venv"'
     }
 }
 
