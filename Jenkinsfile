@@ -48,12 +48,7 @@ pipeline {
         stage('Test Backend') {
     steps {
         echo '========== Stage: Running Backend Tests =========='
-        sh '''docker run --rm \
-            -v "$WORKSPACE/backend:/app" \
-            -w /app \
-            python:3.11-slim \
-            bash -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && pytest /app/tests/ --tb=short -v --ignore=/app/venv"
-        '''
+        sh 'docker run --rm -v "$WORKSPACE/backend:/app" -w /app python:3.11-slim bash -c "pip install --upgrade pip -q && pip install -r /app/requirements.txt -q && pip install pytest pytest-cov -q && pytest /app/tests/ --tb=short -v --ignore=/app/venv"'
     }
 }
 
