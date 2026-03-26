@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: meal-platform
+  labels:
+    app: meal-recipe-platform
+    environment: production
