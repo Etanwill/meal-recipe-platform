@@ -1,0 +1,113 @@
+---
+# ============================================================
+# Playbook 2: Application Deployment
+# Purpose: Clone the app from GitHub and deploy it using
+#           Docker Compose on the target server
+# Usage: ansible-playbook -i inventory.ini playbook-deploy.yml
+# ============================================================
+
+- name: Deploy Meal Recipe Platform
+  hosts: webservers
+  become: yes
+  vars:
+    app_dir: /opt/meal-recipe-platform
+    repo_url: https://github.com/Etanwill/meal-recipe-platform.git
+    branch: main
+
+  tasks:
+
+    - name: Check if app directory exists
+      stat:
+        path: "{{ app_dir }}"
+      register: app_dir_stat
+
+    - name: Clone application repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ branch }}"
+        force: yes
+      when: not app_dir_stat.stat.exists
+
+    - name: Pull latest changes from GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ branch }}"
+        update: yes
+      when: app_dir_stat.stat.exists
+
+    - name: Copy environment file
+      copy:
+        src: .env.example
+        dest: "{{ app_dir }}/backend/.env"
+        owner: ubuntu
+        mode: '0600'
+      ignore_errors: yes
+
+    - name: Stop existing containers
+      command: docker-compose down
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: yes
+
+    - name: Pull latest Docker images
+      command: docker-compose pull
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: yes
+
+    - name: Build Docker images
+      command: docker-compose build --no-cache
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Start application containers
+      command: docker-compose up -d
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Wait for application to start
+      wait_for:
+        port: 5000
+        host: localhost
+        delay: 10
+        timeout: 60
+
+    - name: Verify backend is running
+      uri:
+        url: http://localhost:5000
+        method: GET
+        status_code: 200
+      register: backend_health
+      ignore_errors: yes
+
+    - name: Print backend health status
+      debug:
+        msg: "Backend status: {{ backend_health.status | default('unreachable') }}"
+
+    - name: Verify frontend is running
+      uri:
+        url: http://localhost:80
+        method: GET
+        status_code: 200
+      register: frontend_health
+      ignore_errors: yes
+
+    - name: Print frontend health status
+      debug:
+        msg: "Frontend status: {{ frontend_health.status | default('unreachable') }}"
+
+    - name: Show running containers
+      command: docker-compose ps
+      args:
+        chdir: "{{ app_dir }}"
+      register: containers
+
+    - name: Print running containers
+      debug:
+        msg: "{{ containers.stdout_lines }}"
+
+    - name: Deployment complete
+      debug:
+        msg: "Meal Recipe Platform deployed successfully to {{ inventory_hostname }}"
