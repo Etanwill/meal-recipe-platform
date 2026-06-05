@@ -27,7 +27,7 @@ import {
 
 const teamMembers = [
   {
-    name: 'Etan Will',          // ← CHANGE TO YOUR REAL NAME
+    name: 'Etan Will John',          // ← CHANGE TO YOUR REAL NAME
     role: 'Full Stack Developer & DevOps Engineer',
     responsibilities: [
       'Backend API Development (Python Flask)',
@@ -39,11 +39,11 @@ const teamMembers = [
     avatar: 'EW',               // ← YOUR INITIALS
     color: '#FF6B35',
     skills: ['Python', 'Flask', 'Docker', 'PostgreSQL', 'Jenkins'],
-    email: 'your.email@example.com',     // ← YOUR EMAIL
+    email: 'etanwill@gmail.com',     // ← YOUR EMAIL
     github: 'Etanwill',
   },
   {
-    name: 'Teammate Name',       // ← CHANGE TO TEAMMATE'S REAL NAME
+    name: 'Brondy Noumsi Kamgang',       // ← CHANGE TO TEAMMATE'S REAL NAME
     role: 'Frontend Developer & UI/UX Designer',
     responsibilities: [
       'React Frontend Development',
