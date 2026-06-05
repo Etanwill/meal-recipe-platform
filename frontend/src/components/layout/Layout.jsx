@@ -54,6 +54,7 @@ const Layout = ({ children }) => {
   const commonItems = [
     { label: 'Home', icon: <HomeIcon />, path: '/' },
     { label: 'Recipes', icon: <MenuBookIcon />, path: '/recipes' },
+    { label: 'About Us', icon: <AccountIcon />, path: '/about' },
   ];
 
   if (userRole === 'customer') {
