@@ -7,6 +7,7 @@ import { Box } from '@mui/material';
 // Add these imports at the top
 import RecipeManagement from './components/vendor/RecipeManagement';
 import CreateEditRecipe from './components/vendor/CreateEditRecipe';
+import AboutUs from './pages/AboutUs';
 
 // Theme
 import theme from './theme';
@@ -91,6 +92,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path="/about" element={<AboutUs />} />
       <Route path="/login" element={
         <PublicRoute>
           <Login />
